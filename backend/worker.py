@@ -33,5 +33,8 @@ async def worker_loop():
             print(f"Worker error: {e}")
         await asyncio.sleep(5)
 
-if __name__ == "__main__":
-    asyncio.run(worker_loop())
+async def run_expiry_loop():
+    while True:
+        await expire_stale_locks()
+        await asyncio.sleep(5)
+
