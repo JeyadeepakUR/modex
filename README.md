@@ -493,87 +493,76 @@ Monitor these in production:
 
 ## 🚢 Deployment
 
-### Backend Deployment (Railway)
+### Backend Deployment (Render)
 
-1. **Create Railway Account** and install CLI:
-   ```bash
-   npm i -g @railway/cli
-   railway login
-   ```
+1. **Create Render Account** at [render.com](https://render.com)
 
-2. **Initialize Project**:
-   ```bash
-   cd backend
-   railway init
-   ```
+2. **Create PostgreSQL Database**:
+   - Dashboard → New → PostgreSQL
+   - Copy the **Internal Database URL** for backend connection
 
-3. **Add PostgreSQL Database**:
-   - In Railway dashboard, click "New" → "Database" → "PostgreSQL"
-   - Railway automatically sets `DATABASE_URL` environment variable
+3. **Deploy Backend Web Service**:
+   - Dashboard → New → Web Service
+   - Connect your GitHub repository
+   - Configure:
+     - **Root Directory**: `backend`
+     - **Environment**: `Python 3`
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `python main.py`
+   - Add Environment Variable:
+     - `DATABASE_URL` = Your PostgreSQL Internal URL
 
-4. **Deploy Backend**:
-   ```bash
-   railway up
-   ```
+4. **Deploy Worker Service** (Background Job):
+   - Dashboard → New → Background Worker
+   - Connect same repository
+   - Configure:
+     - **Root Directory**: `backend`
+     - **Environment**: `Python 3`
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `python worker.py`
+   - Add same `DATABASE_URL` environment variable
 
-5. **Deploy Worker** (as separate service):
-   - Create new service in Railway
-   - Link to same database
-   - Set start command: `python worker.py`
+5. **Run Database Migration**:
+   - Connect to your database using the connection string
+   - Run: `psql <DATABASE_URL> -f migrations/001_init.sql`
 
-**Environment Variables (Railway automatically provides):**
-- `DATABASE_URL` - Auto-generated when you add PostgreSQL
-- `PORT` - Auto-generated (Railway uses this)
+### Frontend Deployment (Vercel/Render)
 
-### Frontend Deployment (Vercel)
+**Option A: Vercel (Recommended)**
 
-1. **Install Vercel CLI**:
+1. Install Vercel CLI:
    ```bash
    npm i -g vercel
-   ```
-
-2. **Deploy**:
-   ```bash
    cd frontend
    vercel
    ```
 
-3. **Set Environment Variable** in Vercel dashboard:
-   - Go to Project Settings → Environment Variables
-   - Add `NEXT_PUBLIC_API_BASE_URL` with your Railway backend URL
-   - Format: `https://your-app.up.railway.app/api`
+2. Set Environment Variables in Vercel dashboard:
+   - `NEXT_PUBLIC_API_BASE_URL` = `https://your-render-backend.onrender.com/api`
 
-4. **Redeploy** to apply environment changes:
+3. Redeploy:
    ```bash
    vercel --prod
    ```
 
-### Alternative: Docker Deployment
+**Option B: Render**
 
-Create `Dockerfile` in backend directory:
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["python", "main.py"]
-```
-
-Build and run:
-```bash
-docker build -t hhs-backend .
-docker run -e DATABASE_URL=your_url -p 8000:8000 hhs-backend
-```
+1. Dashboard → New → Static Site
+2. Connect repository
+3. Configure:
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm install && npm run build`
+   - **Publish Directory**: `.next`
+4. Add Environment Variable:
+   - `NEXT_PUBLIC_API_BASE_URL` = Your Render backend URL + `/api`
 
 ### Post-Deployment Checklist
 
-- [ ] Run database migrations on production database
-- [ ] Verify backend health check: `https://your-backend/`
-- [ ] Verify frontend can connect to backend
-- [ ] Ensure worker service is running
-- [ ] Test lock acquisition via API
-- [ ] Monitor logs for errors
+- [ ] Database migrations completed
+- [ ] Backend health check: `https://your-backend.onrender.com/api/health`
+- [ ] Worker service running (check Render logs)
+- [ ] Frontend connects to backend API
+- [ ] Test lock operations via UI
 
 ---
 

@@ -1,7 +1,0 @@
-[build]
-builder = "NIXPACKS"
-
-[deploy]
-startCommand = "python worker.py"
-restartPolicyType = "ALWAYS"
-restartPolicyMaxRetries = 10
