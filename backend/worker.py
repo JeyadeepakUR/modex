@@ -3,24 +3,23 @@ import asyncpg
 import os
 from datetime import datetime, timezone
 
-# Do NOT read DATABASE_URL at import time.
-# Render may not have loaded env vars yet.
+# Always load env ON DEMAND, NOT at import time.
 def get_db_url():
     url = os.getenv("DATABASE_URL")
-    if not url:
-        raise RuntimeError("DATABASE_URL is not set in environment")
+    if not url or url.strip() == "":
+        raise RuntimeError(f"DATABASE_URL missing or empty: {url!r}")
     return url
 
 async def expire_stale_locks():
-    database_url = get_db_url()
-    conn = await asyncpg.connect(database_url)
+    db_url = get_db_url()
+    conn = await asyncpg.connect(db_url)
     try:
         now = datetime.now(timezone.utc)
         result = await conn.execute(
             """
             UPDATE locks 
-            SET status = 'EXPIRED' 
-            WHERE status = 'HELD' 
+            SET status = 'EXPIRED'
+            WHERE status = 'HELD'
             AND EXTRACT(EPOCH FROM ($1 - last_heartbeat)) > ttl_seconds
             """,
             now
