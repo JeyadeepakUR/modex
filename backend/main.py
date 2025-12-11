@@ -1,12 +1,17 @@
+import os
 import uvicorn
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+load_dotenv()
+
 from routes import resources, locks, ml
-import asyncio
-from worker import run_expiry_loop
+from worker import run_expiry_loop  # safe now
 
 app = FastAPI(title="Hospital Hold System")
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Routers
 app.include_router(resources.router, prefix="/api")
 app.include_router(locks.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
@@ -31,7 +37,8 @@ async def health():
 
 @app.on_event("startup")
 async def start_background_worker():
+    print("Starting worker task...")
     asyncio.create_task(run_expiry_loop())
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

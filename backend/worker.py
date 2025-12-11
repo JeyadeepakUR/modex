@@ -1,21 +1,28 @@
 import asyncio
 import asyncpg
 import os
-from dotenv import load_dotenv
 from datetime import datetime, timezone
 
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/hhs")
+# Do NOT read DATABASE_URL at import time.
+# Render may not have loaded env vars yet.
+def get_db_url():
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set in environment")
+    return url
 
 async def expire_stale_locks():
-    conn = await asyncpg.connect(DATABASE_URL)
+    database_url = get_db_url()
+    conn = await asyncpg.connect(database_url)
     try:
         now = datetime.now(timezone.utc)
         result = await conn.execute(
-            """UPDATE locks 
-               SET status = 'EXPIRED' 
-               WHERE status = 'HELD' 
-               AND EXTRACT(EPOCH FROM ($1 - last_heartbeat)) > ttl_seconds""",
+            """
+            UPDATE locks 
+            SET status = 'EXPIRED' 
+            WHERE status = 'HELD' 
+            AND EXTRACT(EPOCH FROM ($1 - last_heartbeat)) > ttl_seconds
+            """,
             now
         )
         count = int(result.split()[-1])
@@ -24,7 +31,7 @@ async def expire_stale_locks():
     finally:
         await conn.close()
 
-async def worker_loop():
+async def run_expiry_loop():
     print("Worker started: monitoring stale locks every 5 seconds")
     while True:
         try:
@@ -32,9 +39,3 @@ async def worker_loop():
         except Exception as e:
             print(f"Worker error: {e}")
         await asyncio.sleep(5)
-
-async def run_expiry_loop():
-    while True:
-        await expire_stale_locks()
-        await asyncio.sleep(5)
-
