@@ -6,12 +6,17 @@ from datetime import datetime, timezone
 # Get database URL from environment
 def get_db_url():
     url = os.getenv("DATABASE_URL")
+    print(f"Worker DATABASE_URL from os.getenv: {url!r}")
     if not url or url.strip() == "":
+        # Print all env vars to debug
+        print(f"All env vars: {list(os.environ.keys())}")
         raise RuntimeError(f"DATABASE_URL missing or empty: {url!r}")
     return url
 
 async def expire_stale_locks():
+    print(f"DEBUG: About to call get_db_url()")
     db_url = get_db_url()
+    print(f"DEBUG: Got db_url: {db_url[:50]}..." if db_url else "DEBUG: db_url is None/empty")
     conn = await asyncpg.connect(db_url)
     try:
         now = datetime.now(timezone.utc)
