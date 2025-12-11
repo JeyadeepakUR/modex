@@ -18,10 +18,12 @@ app.include_router(locks.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
 
 @app.get("/")
+@app.head("/")
 async def root():
     return {"message": "Hospital Hold System API"}
 
 @app.get("/api/health")
+@app.head("/api/health")
 async def health():
     return {"status": "healthy"}
 
