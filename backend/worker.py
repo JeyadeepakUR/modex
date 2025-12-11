@@ -2,6 +2,10 @@ import asyncio
 import asyncpg
 import os
 from datetime import datetime, timezone
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Always load env ON DEMAND, NOT at import time.
 def get_db_url():
