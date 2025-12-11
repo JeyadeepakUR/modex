@@ -1,46 +1,30 @@
 services:
   - type: web
     name: hhs-backend
-    env: python
+    runtime: python
     plan: free
-    
-    # Python version
-    pythonVersion: 3.11
-    
-    # Build command
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
-    
-    # Start command
     startCommand: python main.py
-    
-    # Port
+    healthCheckPath: /api/health
     envVars:
-      - key: PORT
-        value: 8000
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: hhs-postgres
           property: connectionString
     
-    # Health check
-    healthCheckPath: /api/health
-    
-  - type: pserv
+  - type: worker
     name: hhs-worker
-    env: python
+    runtime: python
     plan: free
-    
-    # Python version
-    pythonVersion: 3.11
-    
-    # Build command
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
-    
-    # Start command
     startCommand: python worker.py
-    
-    # Database connection
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: hhs-postgres
@@ -48,6 +32,5 @@ services:
 
 databases:
   - name: hhs-postgres
-    engine: postgres
+    databaseName: hhs
     plan: free
-    region: oregon
